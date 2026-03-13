@@ -11,6 +11,8 @@
 			:root {
 				--bg-color: #050505;
 				--text-color: #ffffff;
+				--ktm-orange: #ff6600;
+				--ktm-orange-hover: #e65c00;
 			}
 			* {
 				margin: 0;
@@ -22,6 +24,66 @@
 				color: var(--text-color);
 				font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 				overflow-x: hidden;
+			}
+			
+			header {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				padding: 1.5rem 3rem;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				z-index: 100;
+				background: rgba(5, 5, 5, 0.4);
+				backdrop-filter: blur(12px);
+				-webkit-backdrop-filter: blur(12px);
+				border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+			}
+
+			.brand {
+				font-size: 1.5rem;
+				font-weight: 900;
+				letter-spacing: 0.1em;
+				color: #fff;
+				text-decoration: none;
+				text-transform: uppercase;
+			}
+
+			.nav-links {
+				display: flex;
+				gap: 2rem;
+				align-items: center;
+			}
+
+			.nav-links a {
+				color: #d4d4d8;
+				text-decoration: none;
+				font-size: 0.9rem;
+				font-weight: 500;
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+				transition: color 0.3s ease;
+			}
+
+			.nav-links a:hover {
+				color: #fff;
+			}
+
+			.cta-button {
+				background-color: var(--ktm-orange);
+				color: #fff !important;
+				padding: 0.75rem 1.5rem;
+				border-radius: 4px;
+				font-weight: 700;
+				letter-spacing: 0.05em;
+				transition: background-color 0.3s ease, transform 0.2s ease;
+			}
+
+			.cta-button:hover {
+				background-color: var(--ktm-orange-hover);
+				transform: translateY(-2px);
 			}
 
 			.hero-container {
@@ -48,6 +110,17 @@
 				height: 100%;
 			}
 
+			.hero-overlay {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: radial-gradient(circle at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%);
+				z-index: 5;
+				pointer-events: none;
+			}
+
 			.hero-content {
 				position: absolute;
 				top: 50%;
@@ -64,26 +137,28 @@
 			}
 
 			.hero-content h1 {
-				font-size: clamp(3rem, 8vw, 6rem);
-				font-weight: 800;
-				letter-spacing: -0.05em;
+				font-size: clamp(4rem, 10vw, 8rem);
+				font-weight: 900;
+				letter-spacing: -0.02em;
+				text-transform: uppercase;
 				margin-bottom: 0;
-				background: linear-gradient(to bottom right, #ffffff, #a1a1aa);
-				-webkit-background-clip: text;
-				-webkit-text-fill-color: transparent;
-				line-height: 1.1;
+				color: #ffffff;
+				text-shadow: 0 10px 30px rgba(0,0,0,0.9), 0 2px 10px rgba(0,0,0,0.5);
+				line-height: 1;
 			}
 			
 			.hero-content p {
 				font-size: clamp(1.2rem, 3vw, 1.8rem);
-				color: #d4d4d8;
-				font-weight: 300;
-				letter-spacing: 0.02em;
+				color: #e4e4e7;
+				font-weight: 400;
+				letter-spacing: 0.1em;
+				text-transform: uppercase;
+				text-shadow: 0 4px 12px rgba(0,0,0,0.9);
 			}
 
 			.scroll-indicator {
 				position: absolute;
-				bottom: 40px;
+				bottom: 50px;
 				left: 50%;
 				transform: translateX(-50%);
 				display: flex;
@@ -91,8 +166,6 @@
 				align-items: center;
 				gap: 12px;
 				z-index: 10;
-				opacity: 0.8;
-				animation: bounce 2s infinite;
 			}
 
 			.scroll-indicator span {
@@ -100,14 +173,14 @@
 				letter-spacing: 0.25em;
 				text-transform: uppercase;
 				font-weight: 600;
-				color: rgba(255,255,255,0.8);
+				color: rgba(255,255,255,0.9);
 			}
 
 			.scroll-indicator .mouse {
-				width: 26px;
-				height: 40px;
-				border: 2px solid rgba(255,255,255,0.8);
-				border-radius: 13px;
+				width: 30px;
+				height: 46px;
+				border: 2px solid rgba(255,255,255,0.6);
+				border-radius: 15px;
 				position: relative;
 			}
 
@@ -115,18 +188,18 @@
 				content: '';
 				width: 4px;
 				height: 8px;
-				background: rgba(255,255,255,0.8);
+				background: var(--ktm-orange);
 				position: absolute;
 				top: 8px;
 				left: 50%;
 				transform: translateX(-50%);
 				border-radius: 2px;
+				animation: scrollWheel 2s infinite;
 			}
 
-			@keyframes bounce {
-				0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
-				40% { transform: translateY(-12px) translateX(-50%); }
-				60% { transform: translateY(-6px) translateX(-50%); }
+			@keyframes scrollWheel {
+				0% { transform: translate(-50%, 0); opacity: 1; }
+				100% { transform: translate(-50%, 15px); opacity: 0; }
 			}
 
 			/* Zoom Section */
@@ -181,21 +254,59 @@
 			}
 
 			.zoom-text-container h2 {
-				font-size: clamp(2rem, 5vw, 4rem);
-				font-weight: 800;
-				color: #fafafa;
-				background: linear-gradient(135deg, #ffffff, #a1a1aa);
-				-webkit-background-clip: text;
-				-webkit-text-fill-color: transparent;
-				text-shadow: 0 10px 30px rgba(0,0,0,0.8);
+				font-size: clamp(3rem, 6vw, 5rem);
+				font-weight: 900;
+				color: #ffffff;
+				text-transform: uppercase;
+				letter-spacing: -0.02em;
+				text-shadow: 0 10px 40px rgba(0,0,0,0.9), 0 2px 10px rgba(0,0,0,0.5);
+				margin-bottom: 1rem;
+			}
+			
+			.zoom-text-container p {
+				font-size: clamp(1rem, 2vw, 1.5rem);
+				color: var(--ktm-orange);
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: 0.1em;
+				text-shadow: 0 4px 12px rgba(0,0,0,0.9);
+			}
+
+			/* Footer */
+			footer {
+				background-color: transparent;
+				padding: 2rem;
+				text-align: center;
+				position: relative;
+				z-index: 40;
+			}
+			footer .footer-content {
+				max-width: 1200px;
+				margin: 0 auto;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
+			footer .footer-logo {
+				font-size: 1.5rem;
+				font-weight: 900;
+				color: rgba(255,255,255,0.3);
+				letter-spacing: 0.2em;
 			}
 		</style>
 	</head>
 	<body>
+		<header>
+			<a href="#" class="brand">Duke</a>
+			<nav class="nav-links">
+				<a href="#book" class="cta-button">Test Ride</a>
+			</nav>
+		</header>
 		<main>
 			<section class="hero-container" id="hero">
 				<div class="sticky-wrapper">
 					<canvas id="hero-canvas"></canvas>
+					<div class="hero-overlay"></div>
 					<div class="hero-content">
 						<h1 id="hero-title">Experience Flow.</h1>
 						<p id="hero-subtitle">Scroll down for magic</p>
@@ -212,10 +323,16 @@
 					<div class="specs-image-container" id="specs-img"></div>
 					<div class="zoom-text-container" id="zoom-text">
 						<h2>The journey proceeds here.</h2>
+						<p>Unleash the beast</p>
 					</div>
 				</div>
 			</section>
 		</main>
+		<footer>
+			<div class="footer-content">
+				<div class="footer-logo">DUKE</div>
+			</div>
+		</footer>
 
 		<script>
 			// Cinematic On-Scroll Image Paint logic
