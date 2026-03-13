@@ -1,17 +1,457 @@
 ---
-
 ---
-
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Cinematic Scroll Experience</title>
+		<style>
+			:root {
+				--bg-color: #050505;
+				--text-color: #ffffff;
+			}
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			body {
+				background-color: var(--bg-color);
+				color: var(--text-color);
+				font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+				overflow-x: hidden;
+			}
+
+			.hero-container {
+				/* The height determines how long it takes to scrub through the video. 
+				   For 70 frames, roughly 800vh keeps pacing consistent but smoother */
+				height: 800vh;
+				position: relative;
+			}
+
+			.sticky-wrapper {
+				position: sticky;
+				top: 0;
+				width: 100vw;
+				height: 100vh;
+				overflow: hidden;
+				background-color: #000;
+			}
+
+			canvas {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+			}
+
+			.hero-content {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				text-align: center;
+				z-index: 10;
+				pointer-events: none;
+				text-shadow: 0 4px 24px rgba(0,0,0,0.8);
+				/* using flex for layout */
+				display: flex;
+				flex-direction: column;
+				gap: 1rem;
+			}
+
+			.hero-content h1 {
+				font-size: clamp(3rem, 8vw, 6rem);
+				font-weight: 800;
+				letter-spacing: -0.05em;
+				margin-bottom: 0;
+				background: linear-gradient(to bottom right, #ffffff, #a1a1aa);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				line-height: 1.1;
+			}
+			
+			.hero-content p {
+				font-size: clamp(1.2rem, 3vw, 1.8rem);
+				color: #d4d4d8;
+				font-weight: 300;
+				letter-spacing: 0.02em;
+			}
+
+			.scroll-indicator {
+				position: absolute;
+				bottom: 40px;
+				left: 50%;
+				transform: translateX(-50%);
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 12px;
+				z-index: 10;
+				opacity: 0.8;
+				animation: bounce 2s infinite;
+			}
+
+			.scroll-indicator span {
+				font-size: 0.875rem;
+				letter-spacing: 0.25em;
+				text-transform: uppercase;
+				font-weight: 600;
+				color: rgba(255,255,255,0.8);
+			}
+
+			.scroll-indicator .mouse {
+				width: 26px;
+				height: 40px;
+				border: 2px solid rgba(255,255,255,0.8);
+				border-radius: 13px;
+				position: relative;
+			}
+
+			.scroll-indicator .mouse::before {
+				content: '';
+				width: 4px;
+				height: 8px;
+				background: rgba(255,255,255,0.8);
+				position: absolute;
+				top: 8px;
+				left: 50%;
+				transform: translateX(-50%);
+				border-radius: 2px;
+			}
+
+			@keyframes bounce {
+				0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
+				40% { transform: translateY(-12px) translateX(-50%); }
+				60% { transform: translateY(-6px) translateX(-50%); }
+			}
+
+			/* Zoom Section */
+			.zoom-section {
+				height: 400vh; /* 300vh for zoom out, 100vh for specs crossfade */
+				position: relative;
+				background-color: #050505;
+				z-index: 20;
+			}
+
+			.zoom-sticky {
+				position: sticky;
+				top: 0;
+				width: 100vw;
+				height: 100vh;
+				overflow: hidden;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+
+			.zoom-image-container {
+				position: absolute;
+				top: 0; left: 0; right: 0; bottom: 0;
+				background-image: url('/695e243ebc32a.png');
+				background-size: cover;
+				background-position: center;
+				/* Initial scale is huge so it looks like a solid color.
+				   Positioned top center to zoom into the smooth sky area and avoid pixelated edges. */
+				transform: scale(50);
+				transform-origin: 50% 5%;
+				will-change: transform;
+			}
+
+			.specs-image-container {
+				position: absolute;
+				top: 0; left: 0; right: 0; bottom: 0;
+				background-image: url('/Gemini_Generated_Image_mq31kqmq31kqmq31.png');
+				background-size: cover;
+				background-position: center;
+				opacity: 0;
+				will-change: opacity;
+				z-index: 25; /* Sits between base zoom image and text */
+			}
+
+			.zoom-text-container {
+				position: relative;
+				z-index: 30;
+				transform: translateY(0);
+				will-change: transform;
+				text-align: center;
+			}
+
+			.zoom-text-container h2 {
+				font-size: clamp(2rem, 5vw, 4rem);
+				font-weight: 800;
+				color: #fafafa;
+				background: linear-gradient(135deg, #ffffff, #a1a1aa);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				text-shadow: 0 10px 30px rgba(0,0,0,0.8);
+			}
+		</style>
 	</head>
 	<body>
-		<h1>Astro</h1>
+		<main>
+			<section class="hero-container" id="hero">
+				<div class="sticky-wrapper">
+					<canvas id="hero-canvas"></canvas>
+					<div class="hero-content">
+						<h1 id="hero-title">Experience Flow.</h1>
+						<p id="hero-subtitle">Scroll down for magic</p>
+					</div>
+					<div class="scroll-indicator" id="scroll-ind">
+						<div class="mouse"></div>
+						<span>Scroll</span>
+					</div>
+				</div>
+			</section>
+			<section class="zoom-section" id="zoom-section">
+				<div class="zoom-sticky">
+					<div class="zoom-image-container" id="zoom-img"></div>
+					<div class="specs-image-container" id="specs-img"></div>
+					<div class="zoom-text-container" id="zoom-text">
+						<h2>The journey proceeds here.</h2>
+					</div>
+				</div>
+			</section>
+		</main>
+
+		<script>
+			// Cinematic On-Scroll Image Paint logic
+			const canvas = document.getElementById('hero-canvas') as HTMLCanvasElement;
+			const context = canvas?.getContext('2d', { alpha: false }) as CanvasRenderingContext2D;
+			const heroContainer = document.getElementById('hero') as HTMLElement;
+			if (!canvas || !context || !heroContainer) throw new Error('Missing elements');
+			
+			// Typography parallax elements
+			const heroTitle = document.getElementById('hero-title') as HTMLElement;
+			const heroSubtitle = document.getElementById('hero-subtitle') as HTMLElement;
+			const scrollInd = document.getElementById('scroll-ind') as HTMLElement;
+
+			const frameNames = [
+				"frame_0001_0.00s.webp", "frame_0002_0.07s.webp", "frame_0003_0.13s.webp",
+				"frame_0004_0.20s.webp", "frame_0005_0.27s.webp", "frame_0006_0.33s.webp",
+				"frame_0007_0.40s.webp", "frame_0008_0.47s.webp", "frame_0009_0.53s.webp",
+				"frame_0010_0.60s.webp", "frame_0011_0.67s.webp", "frame_0012_0.73s.webp",
+				"frame_0013_0.80s.webp", "frame_0014_0.87s.webp", "frame_0015_0.93s.webp",
+				"frame_0016_1.00s.webp", "frame_0017_1.07s.webp", "frame_0018_1.13s.webp",
+				"frame_0019_1.20s.webp", "frame_0020_1.27s.webp", "frame_0021_1.33s.webp",
+				"frame_0022_1.40s.webp", "frame_0023_1.47s.webp", "frame_0024_1.53s.webp",
+				"frame_0025_1.60s.webp", "frame_0026_1.67s.webp", "frame_0027_1.73s.webp",
+				"frame_0028_1.80s.webp", "frame_0029_1.87s.webp", "frame_0030_1.93s.webp",
+				"frame_0031_2.00s.webp", "frame_0032_2.07s.webp", "frame_0033_2.13s.webp",
+				"frame_0034_2.20s.webp", "frame_0035_2.27s.webp", "frame_0036_2.33s.webp",
+				"frame_0037_2.40s.webp", "frame_0038_2.47s.webp", "frame_0039_2.53s.webp",
+				"frame_0040_2.60s.webp", "frame_0041_2.67s.webp", "frame_0042_2.73s.webp",
+				"frame_0043_2.80s.webp", "frame_0044_2.87s.webp", "frame_0045_2.93s.webp",
+				"frame_0046_3.00s.webp", "frame_0047_3.07s.webp", "frame_0048_3.13s.webp",
+				"frame_0049_3.20s.webp", "frame_0050_3.27s.webp", "frame_0051_3.33s.webp",
+				"frame_0052_3.40s.webp", "frame_0053_3.47s.webp", "frame_0054_3.53s.webp",
+				"frame_0055_3.60s.webp", "frame_0056_3.67s.webp", "frame_0057_3.73s.webp",
+				"frame_0058_3.80s.webp", "frame_0059_3.87s.webp", "frame_0060_3.93s.webp",
+				"frame_0061_4.00s.webp", "frame_0062_4.07s.webp", "frame_0063_4.13s.webp",
+				"frame_0064_4.20s.webp", "frame_0065_4.27s.webp", "frame_0066_4.33s.webp",
+				"frame_0067_4.40s.webp", "frame_0068_4.47s.webp", "frame_0069_4.53s.webp",
+				"frame_0070_4.60s.webp"
+			];
+
+			const frameCount = frameNames.length;
+			const images: HTMLImageElement[] = [];
+			let imagesLoaded = 0;
+
+			// Handle Canvas Resizing
+			let width: number, height: number;
+			function resizeCanvas() {
+				const dpr = window.devicePixelRatio || 1;
+				width = window.innerWidth;
+				height = window.innerHeight;
+				canvas.width = width * dpr;
+				canvas.height = height * dpr;
+				context.scale(dpr, dpr);
+				
+				if (imagesLoaded > 0 && images[currentIndex] && images[currentIndex].complete) {
+					renderFrame(currentIndex);
+				}
+			}
+
+			window.addEventListener('resize', resizeCanvas);
+			
+			// Load all images for smooth playback
+			for (let i = 0; i < frameCount; i++) {
+				const img = new Image();
+				img.src = `/frames/${frameNames[i]}`;
+				images.push(img);
+				
+				img.onload = () => {
+					imagesLoaded++;
+					if (imagesLoaded === 1) {
+						// Render first frame immediately
+						resizeCanvas();
+						renderFrame(0);
+					}
+				};
+			}
+
+			// Emulate `object-fit: cover`
+			function drawImageProp(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number, offsetX: number, offsetY: number) {
+				if (arguments.length === 2) {
+					x = y = 0;
+					w = ctx.canvas.width;
+					h = ctx.canvas.height;
+				}
+
+				offsetX = typeof offsetX === "number" ? offsetX : 0.5;
+				offsetY = typeof offsetY === "number" ? offsetY : 0.5;
+
+				if (offsetX < 0) offsetX = 0;
+				if (offsetX > 1) offsetX = 1;
+				if (offsetY < 0) offsetY = 0;
+				if (offsetY > 1) offsetY = 1;
+
+				let iw = img.width,
+					ih = img.height,
+					r = Math.min(w / iw, h / ih),
+					nw = iw * r,
+					nh = ih * r,
+					cx, cy, cw, ch, ar = 1;
+
+				if (nw < w) ar = w / nw;                             
+				if (Math.abs(ar - 1) < 1e-14 && nh < h) ar = h / nh; 
+				nw *= ar;
+				nh *= ar;
+
+				cw = iw / (nw / w);
+				ch = ih / (nh / h);
+
+				cx = (iw - cw) * offsetX;
+				cy = (ih - ch) * offsetY;
+
+				if (cx < 0) cx = 0;
+				if (cy < 0) cy = 0;
+				if (cw > iw) cw = iw;
+				if (ch > ih) ch = ih;
+
+				ctx.drawImage(img, cx, cy, cw, ch,  x, y, w, h);
+			}
+
+			let currentIndex = 0;
+
+			function renderFrame(index: number) {
+				if (!images[index] || !images[index].complete) return;
+				// Fast clear and draw
+				context.fillRect(0, 0, width, height); // fill black behind
+				drawImageProp(context, images[index], 0, 0, width, height, 0.5, 0.5);
+			}
+
+			// Smooth scroll handling
+			let ticking = false;
+
+			window.addEventListener('scroll', () => {
+				if (!ticking) {
+					window.requestAnimationFrame(() => {
+						updateScroll();
+						updateZoomScroll();
+						ticking = false;
+					});
+					ticking = true;
+				}
+			});
+
+			function updateScroll() {
+				const scrollTop = window.scrollY;
+				const heroTop = heroContainer.offsetTop;
+				// Sticky takes up 100vh, so scrollable area is Height - ViewportHeight
+				const maxScroll = heroContainer.offsetHeight - window.innerHeight; 
+				
+				let scrollProgress = (scrollTop - heroTop) / maxScroll;
+				scrollProgress = Math.max(0, Math.min(1, scrollProgress));
+
+				// Precalculate target frame
+				const targetIndex = Math.min(
+					frameCount - 1,
+					Math.floor(scrollProgress * frameCount)
+				);
+
+				if (targetIndex !== currentIndex) {
+					currentIndex = targetIndex;
+					renderFrame(currentIndex);
+				}
+
+				// Content fades and animates
+				const fadeOutPoint = 0.3; // Fades out in first 30% of scroll
+				if (scrollProgress > 0) {
+					const progressInFade = Math.min(1, scrollProgress / fadeOutPoint);
+					const opacity = 1 - progressInFade;
+					
+					heroTitle.style.opacity = opacity.toString();
+					heroSubtitle.style.opacity = opacity.toString();
+					scrollInd.style.opacity = Math.max(0, 1 - (scrollProgress / 0.15)).toString(); // indicator fades much faster
+					
+					// Slight upward push
+					const pushY = -(progressInFade * 40); 
+					heroTitle.style.transform = `translateY(${pushY}px)`;
+					heroSubtitle.style.transform = `translateY(${pushY}px)`;
+				} else {
+					heroTitle.style.opacity = '1';
+					heroSubtitle.style.opacity = '1';
+					scrollInd.style.opacity = '1';
+					heroTitle.style.transform = `translateY(0)`;
+					heroSubtitle.style.transform = `translateY(0)`;
+				}
+			}
+
+			// Zoom Section Logic
+			const zoomSection = document.getElementById('zoom-section') as HTMLElement;
+			const zoomImg = document.getElementById('zoom-img') as HTMLElement;
+			const specsImg = document.getElementById('specs-img') as HTMLElement;
+			const zoomText = document.getElementById('zoom-text') as HTMLElement;
+
+			function updateZoomScroll() {
+				if (!zoomSection || !zoomImg || !zoomText || !specsImg) return;
+
+				const scrollTop = window.scrollY;
+				const sectionTop = zoomSection.offsetTop;
+				// Active scrolling area inside the section
+				const maxScroll = zoomSection.offsetHeight - window.innerHeight;
+				
+				// Calculate total progress from 0 to 1
+				let scrollProgress = (scrollTop - sectionTop) / maxScroll;
+				if (scrollProgress < 0) scrollProgress = 0;
+				if (scrollProgress > 1) scrollProgress = 1;
+
+				// We partition the scroll:
+				// 0 to 0.666 (roughly 200vh) represents the zoom back to 1x.
+				// 0.666 to 1.0 (roughly 100vh) represents the crossfade logic.
+				const zoomProgress = Math.min(1, scrollProgress / 0.666);
+				const fadeProgress = Math.max(0, (scrollProgress - 0.666) / 0.334);
+
+				// Ease function to make zoom non-linear and feel more dramatic early on
+				// using an easeOut quartic feel: 1 - Math.pow(1 - x, 4)
+				const easeOut = 1 - Math.pow(1 - zoomProgress, 4);
+
+				// Image range: 50 -> 1
+				const imgScale = 50 - (easeOut * 49);
+				
+				// Text moves up into the top empty space of the image.
+				// Translating by roughly -35vh puts it nicely in the upper sky region.
+				const textTranslateY = easeOut * -35; 
+
+				// Only update DOM if section is somewhat in view
+				if (scrollTop + window.innerHeight > sectionTop) {
+					zoomImg.style.transform = `scale(${imgScale})`;
+					zoomText.style.transform = `translateY(${textTranslateY}vh)`;
+					
+					// Crossfade logic
+					zoomText.style.opacity = (1 - fadeProgress).toString();
+					specsImg.style.opacity = fadeProgress.toString();
+				}
+			}
+
+			// Initialize after small delay to ensure CSS applied
+			setTimeout(() => {
+				resizeCanvas();
+			}, 0);
+		</script>
 	</body>
 </html>
