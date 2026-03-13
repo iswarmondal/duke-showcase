@@ -26,49 +26,16 @@
 				overflow-x: hidden;
 			}
 			
-			header {
-				position: fixed;
-				top: 0;
-				left: 0;
-				width: 100%;
-				padding: 1.5rem 3rem;
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				z-index: 100;
-				background: rgba(5, 5, 5, 0.4);
-				backdrop-filter: blur(12px);
-				-webkit-backdrop-filter: blur(12px);
-				border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-			}
-
-			.brand {
-				font-size: 1.5rem;
-				font-weight: 900;
-				letter-spacing: 0.1em;
-				color: #fff;
-				text-decoration: none;
-				text-transform: uppercase;
-			}
-
-			.nav-links {
-				display: flex;
-				gap: 2rem;
-				align-items: center;
-			}
-
-			.nav-links a {
-				color: #d4d4d8;
-				text-decoration: none;
-				font-size: 0.9rem;
-				font-weight: 500;
-				text-transform: uppercase;
-				letter-spacing: 0.05em;
-				transition: color 0.3s ease;
-			}
-
-			.nav-links a:hover {
-				color: #fff;
+			.hero-cta-container {
+				position: absolute;
+				top: 55%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				text-align: center;
+				z-index: 20;
+				opacity: 0;
+				pointer-events: none;
+				transition: opacity 0.3s ease;
 			}
 
 			.cta-button {
@@ -89,7 +56,7 @@
 			.hero-container {
 				/* The height determines how long it takes to scrub through the video. 
 				   For 70 frames, roughly 800vh keeps pacing consistent but smoother */
-				height: 800vh;
+				height: 1000vh; /* Increased to allow CTA at the end */
 				position: relative;
 			}
 
@@ -204,7 +171,7 @@
 
 			/* Zoom Section */
 			.zoom-section {
-				height: 400vh; /* 300vh for zoom out, 100vh for specs crossfade */
+				height: 800vh; /* Increased for longer zoom out transition */
 				position: relative;
 				background-color: #050505;
 				z-index: 20;
@@ -296,12 +263,6 @@
 		</style>
 	</head>
 	<body>
-		<header>
-			<a href="#" class="brand">Duke</a>
-			<nav class="nav-links">
-				<a href="#book" class="cta-button">Test Ride</a>
-			</nav>
-		</header>
 		<main>
 			<section class="hero-container" id="hero">
 				<div class="sticky-wrapper">
@@ -310,6 +271,9 @@
 					<div class="hero-content">
 						<h1 id="hero-title">Experience Flow.</h1>
 						<p id="hero-subtitle">Scroll down for magic</p>
+					</div>
+					<div class="hero-cta-container" id="hero-cta">
+						<a href="#book" class="cta-button">Test Ride</a>
 					</div>
 					<div class="scroll-indicator" id="scroll-ind">
 						<div class="mouse"></div>
@@ -485,9 +449,13 @@
 				scrollProgress = Math.max(0, Math.min(1, scrollProgress));
 
 				// Precalculate target frame
+				// Frames finish early (at 80% scroll) so user stays on the last frame
+				const frameEndProgress = 0.8;
+				let frameProgress = Math.min(1, scrollProgress / frameEndProgress);
+
 				const targetIndex = Math.min(
 					frameCount - 1,
-					Math.floor(scrollProgress * frameCount)
+					Math.floor(frameProgress * frameCount)
 				);
 
 				if (targetIndex !== currentIndex) {
@@ -515,6 +483,19 @@
 					scrollInd.style.opacity = '1';
 					heroTitle.style.transform = `translateY(0)`;
 					heroSubtitle.style.transform = `translateY(0)`;
+				}
+
+				// CTA fade in logic at the end of frames
+				const heroCta = document.getElementById('hero-cta');
+				if (heroCta) {
+					if (scrollProgress > frameEndProgress) {
+						const ctaProgress = (scrollProgress - frameEndProgress) / (1 - frameEndProgress);
+						heroCta.style.opacity = Math.min(1, ctaProgress * 2).toString(); // fade in quickly
+						heroCta.style.pointerEvents = ctaProgress > 0.3 ? 'auto' : 'none';
+					} else {
+						heroCta.style.opacity = '0';
+						heroCta.style.pointerEvents = 'none';
+					}
 				}
 			}
 
